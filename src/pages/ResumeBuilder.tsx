@@ -46,6 +46,14 @@ import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import WorkExperienceForm, { WorkExperienceFormValues } from '@/components/WorkExperienceForm';
 import WorkExperienceItem from '@/components/WorkExperienceItem';
+import EducationForm, { EducationFormValues } from '@/components/EducationForm';
+import EducationItem from '@/components/EducationItem';
+import SkillsForm, { SkillFormValues } from '@/components/SkillsForm';
+import SkillsItem from '@/components/SkillsItem';
+import LanguagesForm, { LanguageFormValues } from '@/components/LanguagesForm';
+import LanguagesItem from '@/components/LanguagesItem';
+import ResumeScorecard from '@/components/ResumeScorecard';
+import { generateRecommendation } from '@/utils/aiRecommendations';
 
 const personalInfoSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -62,9 +70,26 @@ const ResumeBuilder = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('personal-info');
   const [aiLoading, setAiLoading] = useState(false);
+  
+  // Work Experience state
   const [isWorkExpDialogOpen, setIsWorkExpDialogOpen] = useState(false);
   const [workExperiences, setWorkExperiences] = useState<WorkExperienceFormValues[]>([]);
   const [editingExperienceIndex, setEditingExperienceIndex] = useState<number | null>(null);
+  
+  // Education state
+  const [isEducationDialogOpen, setIsEducationDialogOpen] = useState(false);
+  const [educations, setEducations] = useState<EducationFormValues[]>([]);
+  const [editingEducationIndex, setEditingEducationIndex] = useState<number | null>(null);
+  
+  // Skills state
+  const [isSkillsDialogOpen, setIsSkillsDialogOpen] = useState(false);
+  const [skillsGroups, setSkillsGroups] = useState<SkillFormValues[]>([]);
+  const [editingSkillsIndex, setEditingSkillsIndex] = useState<number | null>(null);
+  
+  // Languages state
+  const [isLanguagesDialogOpen, setIsLanguagesDialogOpen] = useState(false);
+  const [languagesList, setLanguagesList] = useState<LanguageFormValues[]>([]);
+  const [editingLanguagesIndex, setEditingLanguagesIndex] = useState<number | null>(null);
   
   const form = useForm<PersonalInfoValues>({
     resolver: zodResolver(personalInfoSchema),
@@ -78,19 +103,36 @@ const ResumeBuilder = () => {
     },
   });
 
-  const handleAIGenerate = () => {
+  const handleAIGenerate = async () => {
     setAiLoading(true);
     
-    // Simulate AI generation
-    setTimeout(() => {
-      form.setValue('summary', 'Dedicated and versatile software engineer with 5+ years of experience in developing robust applications. Proficient in JavaScript, React, and Node.js with a strong foundation in algorithms and data structures. Passionate about creating efficient, scalable solutions that address complex business challenges.');
-      setAiLoading(false);
+    try {
+      const name = form.getValues('name');
+      const title = form.getValues('title');
+      const context = `Name: ${name || 'Professional'}, Job Title: ${title || 'Software Developer'}`;
+      
+      const summary = await generateRecommendation({
+        query: "professional resume summary",
+        context,
+        maxLength: 300
+      });
+      
+      form.setValue('summary', summary);
       
       toast({
         title: "Summary Generated",
         description: "AI has created a professional summary based on your profile.",
       });
-    }, 2000);
+    } catch (error) {
+      console.error("Error generating summary:", error);
+      toast({
+        title: "Generation Failed",
+        description: "Unable to generate summary. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const onSubmit = (data: PersonalInfoValues) => {
@@ -101,6 +143,7 @@ const ResumeBuilder = () => {
     setActiveTab('experience');
   };
 
+  // Work Experience handlers
   const handleAddWorkExperience = (data: WorkExperienceFormValues) => {
     if (editingExperienceIndex !== null) {
       // Update existing experience
@@ -140,6 +183,143 @@ const ResumeBuilder = () => {
   const handleCancelWorkExpForm = () => {
     setIsWorkExpDialogOpen(false);
     setEditingExperienceIndex(null);
+  };
+
+  // Education handlers
+  const handleAddEducation = (data: EducationFormValues) => {
+    if (editingEducationIndex !== null) {
+      // Update existing education
+      const updatedEducations = [...educations];
+      updatedEducations[editingEducationIndex] = data;
+      setEducations(updatedEducations);
+      toast({
+        title: "Education Updated",
+        description: "Your education has been updated successfully.",
+      });
+    } else {
+      // Add new education
+      setEducations([...educations, data]);
+      toast({
+        title: "Education Added",
+        description: "Your education has been added successfully.",
+      });
+    }
+    setIsEducationDialogOpen(false);
+    setEditingEducationIndex(null);
+  };
+
+  const handleEditEducation = (index: number) => {
+    setEditingEducationIndex(index);
+    setIsEducationDialogOpen(true);
+  };
+
+  const handleDeleteEducation = (index: number) => {
+    const updatedEducations = educations.filter((_, i) => i !== index);
+    setEducations(updatedEducations);
+    toast({
+      title: "Education Deleted",
+      description: "Your education has been deleted successfully.",
+    });
+  };
+
+  const handleCancelEducationForm = () => {
+    setIsEducationDialogOpen(false);
+    setEditingEducationIndex(null);
+  };
+
+  // Skills handlers
+  const handleAddSkills = (data: SkillFormValues) => {
+    if (editingSkillsIndex !== null) {
+      // Update existing skills
+      const updatedSkillsGroups = [...skillsGroups];
+      updatedSkillsGroups[editingSkillsIndex] = data;
+      setSkillsGroups(updatedSkillsGroups);
+      toast({
+        title: "Skills Updated",
+        description: "Your skills have been updated successfully.",
+      });
+    } else {
+      // Add new skills
+      setSkillsGroups([...skillsGroups, data]);
+      toast({
+        title: "Skills Added",
+        description: "Your skills have been added successfully.",
+      });
+    }
+    setIsSkillsDialogOpen(false);
+    setEditingSkillsIndex(null);
+  };
+
+  const handleEditSkills = (index: number) => {
+    setEditingSkillsIndex(index);
+    setIsSkillsDialogOpen(true);
+  };
+
+  const handleDeleteSkills = (index: number) => {
+    const updatedSkillsGroups = skillsGroups.filter((_, i) => i !== index);
+    setSkillsGroups(updatedSkillsGroups);
+    toast({
+      title: "Skills Deleted",
+      description: "Your skills have been deleted successfully.",
+    });
+  };
+
+  const handleCancelSkillsForm = () => {
+    setIsSkillsDialogOpen(false);
+    setEditingSkillsIndex(null);
+  };
+
+  // Languages handlers
+  const handleAddLanguages = (data: LanguageFormValues) => {
+    if (editingLanguagesIndex !== null) {
+      // Update existing languages
+      const updatedLanguagesList = [...languagesList];
+      updatedLanguagesList[editingLanguagesIndex] = data;
+      setLanguagesList(updatedLanguagesList);
+      toast({
+        title: "Languages Updated",
+        description: "Your languages have been updated successfully.",
+      });
+    } else {
+      // Add new languages
+      setLanguagesList([...languagesList, data]);
+      toast({
+        title: "Languages Added",
+        description: "Your languages have been added successfully.",
+      });
+    }
+    setIsLanguagesDialogOpen(false);
+    setEditingLanguagesIndex(null);
+  };
+
+  const handleEditLanguages = (index: number) => {
+    setEditingLanguagesIndex(index);
+    setIsLanguagesDialogOpen(true);
+  };
+
+  const handleDeleteLanguages = (index: number) => {
+    const updatedLanguagesList = languagesList.filter((_, i) => i !== index);
+    setLanguagesList(updatedLanguagesList);
+    toast({
+      title: "Languages Deleted",
+      description: "Your languages have been deleted successfully.",
+    });
+  };
+
+  const handleCancelLanguagesForm = () => {
+    setIsLanguagesDialogOpen(false);
+    setEditingLanguagesIndex(null);
+  };
+
+  // Assemble resume data for AI analysis
+  const getResumeData = () => {
+    return {
+      personalInfo: form.getValues(),
+      workExperiences,
+      education: educations,
+      skills: skillsGroups,
+      languages: languagesList,
+    };
   };
 
   return (
@@ -227,6 +407,8 @@ const ResumeBuilder = () => {
                 </ul>
               </div>
             </div>
+
+            <ResumeScorecard resumeData={getResumeData()} />
 
             <Card className="mt-6">
               <CardHeader>
@@ -427,15 +609,40 @@ const ResumeBuilder = () => {
                   <CardDescription>Add your educational background</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12">
-                    <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No education added yet</h3>
-                    <p className="text-muted-foreground mb-6">Add your educational background to showcase your qualifications</p>
-                    <Button className="gap-2">
-                      <GraduationCap className="h-4 w-4" />
-                      Add Education
-                    </Button>
-                  </div>
+                  {educations.length > 0 ? (
+                    <div className="space-y-4">
+                      {educations.map((education, index) => (
+                        <EducationItem 
+                          key={index}
+                          education={education}
+                          onEdit={() => handleEditEducation(index)}
+                          onDelete={() => handleDeleteEducation(index)}
+                        />
+                      ))}
+                      <div className="flex justify-center mt-6">
+                        <Button 
+                          onClick={() => setIsEducationDialogOpen(true)}
+                          className="gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Another Education
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No education added yet</h3>
+                      <p className="text-muted-foreground mb-6">Add your educational background to showcase your qualifications</p>
+                      <Button 
+                        className="gap-2"
+                        onClick={() => setIsEducationDialogOpen(true)}
+                      >
+                        <GraduationCap className="h-4 w-4" />
+                        Add Education
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -447,15 +654,40 @@ const ResumeBuilder = () => {
                   <CardDescription>Add your technical and soft skills</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12">
-                    <Award className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No skills added yet</h3>
-                    <p className="text-muted-foreground mb-6">Add your skills to showcase your expertise</p>
-                    <Button className="gap-2">
-                      <Award className="h-4 w-4" />
-                      Add Skills
-                    </Button>
-                  </div>
+                  {skillsGroups.length > 0 ? (
+                    <div className="space-y-4">
+                      {skillsGroups.map((skillsGroup, index) => (
+                        <SkillsItem 
+                          key={index}
+                          skillsGroup={skillsGroup}
+                          onEdit={() => handleEditSkills(index)}
+                          onDelete={() => handleDeleteSkills(index)}
+                        />
+                      ))}
+                      <div className="flex justify-center mt-6">
+                        <Button 
+                          onClick={() => setIsSkillsDialogOpen(true)}
+                          className="gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Another Skills Group
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Award className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No skills added yet</h3>
+                      <p className="text-muted-foreground mb-6">Add your skills to showcase your expertise</p>
+                      <Button 
+                        className="gap-2"
+                        onClick={() => setIsSkillsDialogOpen(true)}
+                      >
+                        <Award className="h-4 w-4" />
+                        Add Skills
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -467,15 +699,40 @@ const ResumeBuilder = () => {
                   <CardDescription>Add languages you speak</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12">
-                    <Languages className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No languages added yet</h3>
-                    <p className="text-muted-foreground mb-6">Add languages to showcase your communication skills</p>
-                    <Button className="gap-2">
-                      <Languages className="h-4 w-4" />
-                      Add Languages
-                    </Button>
-                  </div>
+                  {languagesList.length > 0 ? (
+                    <div className="space-y-4">
+                      {languagesList.map((languages, index) => (
+                        <LanguagesItem 
+                          key={index}
+                          languages={languages}
+                          onEdit={() => handleEditLanguages(index)}
+                          onDelete={() => handleDeleteLanguages(index)}
+                        />
+                      ))}
+                      <div className="flex justify-center mt-6">
+                        <Button 
+                          onClick={() => setIsLanguagesDialogOpen(true)}
+                          className="gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Update Languages
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Languages className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No languages added yet</h3>
+                      <p className="text-muted-foreground mb-6">Add languages to showcase your communication skills</p>
+                      <Button 
+                        className="gap-2"
+                        onClick={() => setIsLanguagesDialogOpen(true)}
+                      >
+                        <Languages className="h-4 w-4" />
+                        Add Languages
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -497,6 +754,60 @@ const ResumeBuilder = () => {
             onCancel={handleCancelWorkExpForm}
             defaultValues={editingExperienceIndex !== null ? workExperiences[editingExperienceIndex] : undefined}
             isEdit={editingExperienceIndex !== null}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Education Dialog */}
+      <Dialog open={isEducationDialogOpen} onOpenChange={setIsEducationDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}</DialogTitle>
+            <DialogDescription>
+              Add details about your educational background.
+            </DialogDescription>
+          </DialogHeader>
+          <EducationForm 
+            onSubmit={handleAddEducation}
+            onCancel={handleCancelEducationForm}
+            defaultValues={editingEducationIndex !== null ? educations[editingEducationIndex] : undefined}
+            isEdit={editingEducationIndex !== null}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Skills Dialog */}
+      <Dialog open={isSkillsDialogOpen} onOpenChange={setIsSkillsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingSkillsIndex !== null ? 'Edit Skills' : 'Add Skills'}</DialogTitle>
+            <DialogDescription>
+              Add your technical and soft skills with proficiency levels.
+            </DialogDescription>
+          </DialogHeader>
+          <SkillsForm 
+            onSubmit={handleAddSkills}
+            onCancel={handleCancelSkillsForm}
+            defaultValues={editingSkillsIndex !== null ? skillsGroups[editingSkillsIndex] : undefined}
+            isEdit={editingSkillsIndex !== null}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Languages Dialog */}
+      <Dialog open={isLanguagesDialogOpen} onOpenChange={setIsLanguagesDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingLanguagesIndex !== null ? 'Edit Languages' : 'Add Languages'}</DialogTitle>
+            <DialogDescription>
+              Add languages you speak with proficiency levels.
+            </DialogDescription>
+          </DialogHeader>
+          <LanguagesForm 
+            onSubmit={handleAddLanguages}
+            onCancel={handleCancelLanguagesForm}
+            defaultValues={editingLanguagesIndex !== null ? languagesList[editingLanguagesIndex] : undefined}
+            isEdit={editingLanguagesIndex !== null}
           />
         </DialogContent>
       </Dialog>
