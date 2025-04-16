@@ -20,6 +20,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import Navbar from '@/components/Navbar';
 import { 
   FileText, 
@@ -30,12 +37,15 @@ import {
   Languages, 
   Sparkles,
   Download,
-  Save
+  Save,
+  Plus
 } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
+import WorkExperienceForm, { WorkExperienceFormValues } from '@/components/WorkExperienceForm';
+import WorkExperienceItem from '@/components/WorkExperienceItem';
 
 const personalInfoSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -52,6 +62,9 @@ const ResumeBuilder = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('personal-info');
   const [aiLoading, setAiLoading] = useState(false);
+  const [isWorkExpDialogOpen, setIsWorkExpDialogOpen] = useState(false);
+  const [workExperiences, setWorkExperiences] = useState<WorkExperienceFormValues[]>([]);
+  const [editingExperienceIndex, setEditingExperienceIndex] = useState<number | null>(null);
   
   const form = useForm<PersonalInfoValues>({
     resolver: zodResolver(personalInfoSchema),
@@ -86,6 +99,47 @@ const ResumeBuilder = () => {
       description: "Your personal information has been saved successfully.",
     });
     setActiveTab('experience');
+  };
+
+  const handleAddWorkExperience = (data: WorkExperienceFormValues) => {
+    if (editingExperienceIndex !== null) {
+      // Update existing experience
+      const updatedExperiences = [...workExperiences];
+      updatedExperiences[editingExperienceIndex] = data;
+      setWorkExperiences(updatedExperiences);
+      toast({
+        title: "Experience Updated",
+        description: "Your work experience has been updated successfully.",
+      });
+    } else {
+      // Add new experience
+      setWorkExperiences([...workExperiences, data]);
+      toast({
+        title: "Experience Added",
+        description: "Your work experience has been added successfully.",
+      });
+    }
+    setIsWorkExpDialogOpen(false);
+    setEditingExperienceIndex(null);
+  };
+
+  const handleEditExperience = (index: number) => {
+    setEditingExperienceIndex(index);
+    setIsWorkExpDialogOpen(true);
+  };
+
+  const handleDeleteExperience = (index: number) => {
+    const updatedExperiences = workExperiences.filter((_, i) => i !== index);
+    setWorkExperiences(updatedExperiences);
+    toast({
+      title: "Experience Deleted",
+      description: "Your work experience has been deleted successfully.",
+    });
+  };
+
+  const handleCancelWorkExpForm = () => {
+    setIsWorkExpDialogOpen(false);
+    setEditingExperienceIndex(null);
   };
 
   return (
@@ -328,15 +382,40 @@ const ResumeBuilder = () => {
                   <CardDescription>Add your professional work experience</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12">
-                    <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No work experience added yet</h3>
-                    <p className="text-muted-foreground mb-6">Add your work history to enhance your resume</p>
-                    <Button className="gap-2">
-                      <Briefcase className="h-4 w-4" />
-                      Add Work Experience
-                    </Button>
-                  </div>
+                  {workExperiences.length > 0 ? (
+                    <div className="space-y-4">
+                      {workExperiences.map((experience, index) => (
+                        <WorkExperienceItem 
+                          key={index}
+                          experience={experience}
+                          onEdit={() => handleEditExperience(index)}
+                          onDelete={() => handleDeleteExperience(index)}
+                        />
+                      ))}
+                      <div className="flex justify-center mt-6">
+                        <Button 
+                          onClick={() => setIsWorkExpDialogOpen(true)}
+                          className="gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Another Experience
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No work experience added yet</h3>
+                      <p className="text-muted-foreground mb-6">Add your work history to enhance your resume</p>
+                      <Button 
+                        className="gap-2"
+                        onClick={() => setIsWorkExpDialogOpen(true)}
+                      >
+                        <Briefcase className="h-4 w-4" />
+                        Add Work Experience
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -403,6 +482,24 @@ const ResumeBuilder = () => {
           </div>
         </div>
       </div>
+
+      {/* Work Experience Dialog */}
+      <Dialog open={isWorkExpDialogOpen} onOpenChange={setIsWorkExpDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingExperienceIndex !== null ? 'Edit Work Experience' : 'Add Work Experience'}</DialogTitle>
+            <DialogDescription>
+              Add details about your work history, responsibilities, and achievements.
+            </DialogDescription>
+          </DialogHeader>
+          <WorkExperienceForm 
+            onSubmit={handleAddWorkExperience}
+            onCancel={handleCancelWorkExpForm}
+            defaultValues={editingExperienceIndex !== null ? workExperiences[editingExperienceIndex] : undefined}
+            isEdit={editingExperienceIndex !== null}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
