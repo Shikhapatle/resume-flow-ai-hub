@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import JobFinder from "./pages/JobFinder";
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Admin from "./pages/Admin";
+import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +26,12 @@ const App = () => (
           <Route path="/resume-builder" element={<ResumeBuilder />} />
           <Route path="/job-finder" element={<JobFinder />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

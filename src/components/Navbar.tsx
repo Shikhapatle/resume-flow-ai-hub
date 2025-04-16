@@ -1,10 +1,17 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FileText, Search, BarChart3 } from 'lucide-react';
+import { FileText, Search, BarChart3, Shield } from 'lucide-react';
 
 const Navbar = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    const userRole = localStorage.getItem("userRole");
+    setIsAdmin(userRole === "admin");
+  }, []);
+
   return (
     <nav className="border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,12 +40,34 @@ const Navbar = () => {
                 <span>Dashboard</span>
               </Button>
             </Link>
-            <Link to="/login">
-              <Button variant="outline">Login</Button>
-            </Link>
-            <Link to="/register">
-              <Button>Get Started</Button>
-            </Link>
+            
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="ghost" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Admin</span>
+                </Button>
+              </Link>
+            )}
+            
+            {isAdmin ? (
+              <Link to="/login">
+                <Button variant="outline" onClick={() => {
+                  localStorage.removeItem("isAuthenticated");
+                  localStorage.removeItem("userRole");
+                  window.location.href = "/";
+                }}>Logout</Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline">Login</Button>
+                </Link>
+                <Link to="/register">
+                  <Button>Get Started</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
