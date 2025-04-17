@@ -94,22 +94,18 @@ const ResumeBuilder = () => {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   
-  // Work Experience state
   const [isWorkExpDialogOpen, setIsWorkExpDialogOpen] = useState(false);
   const [workExperiences, setWorkExperiences] = useState<WorkExperienceFormValues[]>([]);
   const [editingExperienceIndex, setEditingExperienceIndex] = useState<number | null>(null);
   
-  // Education state
   const [isEducationDialogOpen, setIsEducationDialogOpen] = useState(false);
   const [educations, setEducations] = useState<EducationFormValues[]>([]);
   const [editingEducationIndex, setEditingEducationIndex] = useState<number | null>(null);
   
-  // Skills state
   const [isSkillsDialogOpen, setIsSkillsDialogOpen] = useState(false);
   const [skillsGroups, setSkillsGroups] = useState<SkillFormValues[]>([]);
   const [editingSkillsIndex, setEditingSkillsIndex] = useState<number | null>(null);
   
-  // Languages state
   const [isLanguagesDialogOpen, setIsLanguagesDialogOpen] = useState(false);
   const [languagesList, setLanguagesList] = useState<LanguageFormValues[]>([]);
   const [editingLanguagesIndex, setEditingLanguagesIndex] = useState<number | null>(null);
@@ -126,16 +122,13 @@ const ResumeBuilder = () => {
     },
   });
 
-  // Load saved draft on component mount
   useEffect(() => {
     const savedDraft = loadResumeDraft();
     if (savedDraft) {
-      // Update personal info form
       if (savedDraft.personalInfo) {
         form.reset(savedDraft.personalInfo);
       }
       
-      // Update work experiences
       if (savedDraft.workExperiences) {
         const typedWorkExperiences = savedDraft.workExperiences.map(exp => ({
           description: exp.description || '',
@@ -149,7 +142,6 @@ const ResumeBuilder = () => {
         setWorkExperiences(typedWorkExperiences);
       }
       
-      // Update education
       if (savedDraft.education) {
         const typedEducation = savedDraft.education.map(edu => ({
           description: edu.description || '',
@@ -165,7 +157,6 @@ const ResumeBuilder = () => {
         setEducations(typedEducation);
       }
       
-      // Update skills
       if (savedDraft.skills) {
         setSkillsGroups(savedDraft.skills.map(skillGroup => ({
           category: skillGroup.category,
@@ -176,7 +167,6 @@ const ResumeBuilder = () => {
         })));
       }
       
-      // Update languages
       if (savedDraft.languages) {
         setLanguagesList(savedDraft.languages.map(lang => ({
           name: lang.name,
@@ -281,10 +271,8 @@ const ResumeBuilder = () => {
     setActiveTab('experience');
   };
 
-  // Work Experience handlers
   const handleAddWorkExperience = (data: WorkExperienceFormValues) => {
     if (editingExperienceIndex !== null) {
-      // Update existing experience
       const updatedExperiences = [...workExperiences];
       updatedExperiences[editingExperienceIndex] = data;
       setWorkExperiences(updatedExperiences);
@@ -293,7 +281,6 @@ const ResumeBuilder = () => {
         description: "Your work experience has been updated successfully.",
       });
     } else {
-      // Add new experience
       setWorkExperiences([...workExperiences, data]);
       toast({
         title: "Experience Added",
@@ -323,10 +310,8 @@ const ResumeBuilder = () => {
     setEditingExperienceIndex(null);
   };
 
-  // Education handlers
   const handleAddEducation = (data: EducationFormValues) => {
     if (editingEducationIndex !== null) {
-      // Update existing education
       const updatedEducations = [...educations];
       updatedEducations[editingEducationIndex] = data;
       setEducations(updatedEducations);
@@ -335,7 +320,6 @@ const ResumeBuilder = () => {
         description: "Your education has been updated successfully.",
       });
     } else {
-      // Add new education
       setEducations([...educations, data]);
       toast({
         title: "Education Added",
@@ -365,10 +349,8 @@ const ResumeBuilder = () => {
     setEditingEducationIndex(null);
   };
 
-  // Skills handlers
   const handleAddSkills = (data: SkillFormValues) => {
     if (editingSkillsIndex !== null) {
-      // Update existing skills
       const updatedSkillsGroups = [...skillsGroups];
       updatedSkillsGroups[editingSkillsIndex] = data;
       setSkillsGroups(updatedSkillsGroups);
@@ -377,7 +359,6 @@ const ResumeBuilder = () => {
         description: "Your skills have been updated successfully.",
       });
     } else {
-      // Add new skills
       setSkillsGroups([...skillsGroups, data]);
       toast({
         title: "Skills Added",
@@ -407,10 +388,8 @@ const ResumeBuilder = () => {
     setEditingSkillsIndex(null);
   };
 
-  // Languages handlers
   const handleAddLanguages = (data: LanguageFormValues) => {
     if (editingLanguagesIndex !== null) {
-      // Update existing languages
       const updatedLanguagesList = [...languagesList];
       updatedLanguagesList[editingLanguagesIndex] = data;
       setLanguagesList(updatedLanguagesList);
@@ -419,7 +398,6 @@ const ResumeBuilder = () => {
         description: "Your languages have been updated successfully.",
       });
     } else {
-      // Add new languages
       setLanguagesList([...languagesList, data]);
       toast({
         title: "Languages Added",
@@ -449,7 +427,6 @@ const ResumeBuilder = () => {
     setEditingLanguagesIndex(null);
   };
 
-  // Assemble resume data for AI analysis and PDF generation
   const getResumeData = (): ResumeData => {
     return {
       personalInfo: {
@@ -973,3 +950,109 @@ const ResumeBuilder = () => {
                       </Button>
                     </div>
                   )}
+                </CardContent>
+                <CardFooter className="flex justify-end pt-0">
+                  <Button onClick={handleSaveDraft} variant="outline" className="gap-2">
+                    <Save className="h-4 w-4" />
+                    Save Progress
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Resume Preview</DialogTitle>
+            <DialogDescription>
+              Preview your resume before downloading
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 overflow-auto flex justify-center" style={{ height: "calc(90vh - 160px)" }}>
+            {pdfPreviewUrl && (
+              <iframe 
+                src={pdfPreviewUrl} 
+                className="w-full h-full border border-gray-200 rounded"
+                title="Resume Preview"
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={handleDownloadPDF} className="gap-2">
+              <Download className="h-4 w-4" />
+              Download PDF
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isWorkExpDialogOpen} onOpenChange={setIsWorkExpDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingExperienceIndex !== null ? "Edit Work Experience" : "Add Work Experience"}
+            </DialogTitle>
+          </DialogHeader>
+          <WorkExperienceForm 
+            onSubmit={handleAddWorkExperience} 
+            onCancel={handleCancelWorkExpForm}
+            defaultValues={editingExperienceIndex !== null ? workExperiences[editingExperienceIndex] : undefined}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEducationDialogOpen} onOpenChange={setIsEducationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingEducationIndex !== null ? "Edit Education" : "Add Education"}
+            </DialogTitle>
+          </DialogHeader>
+          <EducationForm 
+            onSubmit={handleAddEducation} 
+            onCancel={handleCancelEducationForm}
+            defaultValues={editingEducationIndex !== null ? educations[editingEducationIndex] : undefined}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSkillsDialogOpen} onOpenChange={setIsSkillsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingSkillsIndex !== null ? "Edit Skills" : "Add Skills"}
+            </DialogTitle>
+          </DialogHeader>
+          <SkillsForm 
+            onSubmit={handleAddSkills} 
+            onCancel={handleCancelSkillsForm}
+            defaultValues={editingSkillsIndex !== null ? skillsGroups[editingSkillsIndex] : undefined}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isLanguagesDialogOpen} onOpenChange={setIsLanguagesDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingLanguagesIndex !== null ? "Edit Languages" : "Add Languages"}
+            </DialogTitle>
+          </DialogHeader>
+          <LanguagesForm 
+            onSubmit={handleAddLanguages} 
+            onCancel={handleCancelLanguagesForm}
+            defaultValues={editingLanguagesIndex !== null ? languagesList[editingLanguagesIndex] : undefined}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ResumeBuilder;
