@@ -69,7 +69,8 @@ import {
   saveResumeDraft, 
   loadResumeDraft, 
   downloadResumePDF, 
-  generateResumePDF 
+  generateResumePDF,
+  ResumeData
 } from '@/utils/pdfGenerator';
 
 const personalInfoSchema = z.object({
@@ -82,48 +83,6 @@ const personalInfoSchema = z.object({
 });
 
 type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
-
-type ResumeData = {
-  personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-    title: string;
-    summary: string;
-  };
-  workExperiences: {
-    description: string;
-    location: string;
-    jobTitle: string;
-    company: string;
-    startDate: string;
-    endDate: string;
-    currentlyWorking: boolean;
-  }[];
-  education: {
-    description: string;
-    location: string;
-    institution: string;
-    degree: string;
-    fieldOfStudy: string;
-    startDate: string;
-    endDate: string;
-    currentlyStudying: boolean;
-    gpa: string;
-  }[];
-  skills: {
-    category: string;
-    skills: {
-      name: string;
-      level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
-    }[];
-  }[];
-  languages: {
-    name: string;
-    proficiency: "Basic" | "Fluent" | "Intermediate" | "Advanced" | "Native";
-  }[];
-};
 
 const ResumeBuilder = () => {
   const { toast } = useToast();
@@ -178,22 +137,51 @@ const ResumeBuilder = () => {
       
       // Update work experiences
       if (savedDraft.workExperiences) {
-        setWorkExperiences(savedDraft.workExperiences);
+        const typedWorkExperiences = savedDraft.workExperiences.map(exp => ({
+          description: exp.description || '',
+          location: exp.location || '',
+          position: exp.jobTitle || '',
+          company: exp.company || '',
+          startDate: exp.startDate || '',
+          endDate: exp.endDate || '',
+          current: exp.currentlyWorking || false,
+        }));
+        setWorkExperiences(typedWorkExperiences);
       }
       
       // Update education
       if (savedDraft.education) {
-        setEducations(savedDraft.education);
+        const typedEducation = savedDraft.education.map(edu => ({
+          description: edu.description || '',
+          location: edu.location || '',
+          institution: edu.institution || '',
+          degree: edu.degree || '',
+          field: edu.fieldOfStudy || '',
+          startDate: edu.startDate || '',
+          endDate: edu.endDate || '',
+          current: edu.currentlyStudying || false,
+          gpa: edu.gpa || '',
+        }));
+        setEducations(typedEducation);
       }
       
       // Update skills
       if (savedDraft.skills) {
-        setSkillsGroups(savedDraft.skills);
+        setSkillsGroups(savedDraft.skills.map(skillGroup => ({
+          category: skillGroup.category,
+          skills: skillGroup.skills.map(skill => ({
+            name: skill.name,
+            level: skill.level
+          }))
+        })));
       }
       
       // Update languages
       if (savedDraft.languages) {
-        setLanguagesList(savedDraft.languages);
+        setLanguagesList(savedDraft.languages.map(lang => ({
+          name: lang.name,
+          proficiency: lang.proficiency
+        })));
       }
       
       toast({
@@ -477,8 +465,8 @@ const ResumeBuilder = () => {
         location: exp.location || '',
         jobTitle: exp.position || '',
         company: exp.company || '',
-        startDate: exp.startDate || '',
-        endDate: exp.endDate || '',
+        startDate: typeof exp.startDate === 'string' ? exp.startDate : (exp.startDate?.toISOString().split('T')[0] || ''),
+        endDate: typeof exp.endDate === 'string' ? exp.endDate : (exp.endDate?.toISOString().split('T')[0] || ''),
         currentlyWorking: exp.current || false,
       })),
       education: educations.map(edu => ({
@@ -487,8 +475,8 @@ const ResumeBuilder = () => {
         institution: edu.institution || '',
         degree: edu.degree || '',
         fieldOfStudy: edu.field || '',
-        startDate: edu.startDate || '',
-        endDate: edu.endDate || '',
+        startDate: typeof edu.startDate === 'string' ? edu.startDate : (edu.startDate?.toISOString().split('T')[0] || ''),
+        endDate: typeof edu.endDate === 'string' ? edu.endDate : (edu.endDate?.toISOString().split('T')[0] || ''),
         currentlyStudying: edu.current || false,
         gpa: edu.gpa || '',
       })),
@@ -985,119 +973,3 @@ const ResumeBuilder = () => {
                       </Button>
                     </div>
                   )}
-                </CardContent>
-                <CardFooter className="flex justify-end pt-0">
-                  <Button onClick={handleSaveDraft} variant="outline" className="gap-2">
-                    <Save className="h-4 w-4" />
-                    Save Progress
-                  </Button>
-                </CardFooter>
-              </Card>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Work Experience Dialog */}
-      <Dialog open={isWorkExpDialogOpen} onOpenChange={setIsWorkExpDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingExperienceIndex !== null ? 'Edit Work Experience' : 'Add Work Experience'}</DialogTitle>
-            <DialogDescription>
-              Add details about your work history, responsibilities, and achievements.
-            </DialogDescription>
-          </DialogHeader>
-          <WorkExperienceForm 
-            onSubmit={handleAddWorkExperience}
-            onCancel={handleCancelWorkExpForm}
-            defaultValues={editingExperienceIndex !== null ? workExperiences[editingExperienceIndex] : undefined}
-            isEdit={editingExperienceIndex !== null}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Education Dialog */}
-      <Dialog open={isEducationDialogOpen} onOpenChange={setIsEducationDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}</DialogTitle>
-            <DialogDescription>
-              Add details about your educational background.
-            </DialogDescription>
-          </DialogHeader>
-          <EducationForm 
-            onSubmit={handleAddEducation}
-            onCancel={handleCancelEducationForm}
-            defaultValues={editingEducationIndex !== null ? educations[editingEducationIndex] : undefined}
-            isEdit={editingEducationIndex !== null}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Skills Dialog */}
-      <Dialog open={isSkillsDialogOpen} onOpenChange={setIsSkillsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingSkillsIndex !== null ? 'Edit Skills' : 'Add Skills'}</DialogTitle>
-            <DialogDescription>
-              Add your technical and soft skills with proficiency levels.
-            </DialogDescription>
-          </DialogHeader>
-          <SkillsForm 
-            onSubmit={handleAddSkills}
-            onCancel={handleCancelSkillsForm}
-            defaultValues={editingSkillsIndex !== null ? skillsGroups[editingSkillsIndex] : undefined}
-            isEdit={editingSkillsIndex !== null}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Languages Dialog */}
-      <Dialog open={isLanguagesDialogOpen} onOpenChange={setIsLanguagesDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingLanguagesIndex !== null ? 'Edit Languages' : 'Add Languages'}</DialogTitle>
-            <DialogDescription>
-              Add languages you speak with proficiency levels.
-            </DialogDescription>
-          </DialogHeader>
-          <LanguagesForm 
-            onSubmit={handleAddLanguages}
-            onCancel={handleCancelLanguagesForm}
-            defaultValues={editingLanguagesIndex !== null ? languagesList[editingLanguagesIndex] : undefined}
-            isEdit={editingLanguagesIndex !== null}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* PDF Preview Dialog */}
-      <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle>Resume PDF Preview</DialogTitle>
-          </DialogHeader>
-          {pdfPreviewUrl && (
-            <div className="w-full h-[80vh]">
-              <iframe 
-                src={pdfPreviewUrl} 
-                className="w-full h-full" 
-                title="Resume PDF preview"
-              />
-            </div>
-          )}
-          <div className="p-4 bg-background border-t flex justify-between">
-            <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
-              Close
-            </Button>
-            <Button onClick={handleDownloadPDF} className="gap-2">
-              <Download className="h-4 w-4" />
-              Download PDF
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default ResumeBuilder;

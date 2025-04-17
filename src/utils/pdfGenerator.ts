@@ -2,7 +2,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { toast } from '@/components/ui/use-toast';
 
-interface ResumeData {
+export interface ResumeData {
   personalInfo: {
     name: string;
     email: string;
@@ -198,8 +198,6 @@ export const generateResumePDF = async (resumeData: ResumeData): Promise<string 
     const pdfUrl = URL.createObjectURL(pdfBlob);
     
     document.body.removeChild(container);
-    
-    const fileName = `${resumeData.personalInfo.name.replace(/\s+/g, '_')}_Resume.pdf`;
     
     return pdfUrl;
   } catch (error) {
