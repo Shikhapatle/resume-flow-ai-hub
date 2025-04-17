@@ -61,7 +61,7 @@ const LanguagesForm: React.FC<LanguagesFormProps> = ({
 
   const handleAddLanguage = () => {
     if (languageInput.trim()) {
-      const updatedLanguages = [...(watchLanguages || []), { name: languageInput.trim(), proficiency: "Intermediate" }];
+      const updatedLanguages = [...(watchLanguages || []), { name: languageInput.trim(), proficiency: "Intermediate" as const }];
       form.setValue('languages', updatedLanguages);
       setLanguageInput('');
     }
@@ -99,7 +99,10 @@ const LanguagesForm: React.FC<LanguagesFormProps> = ({
         .split(/,|\n/)
         .map(language => language.trim())
         .filter(language => language.length > 0 && language.length < 50) // Basic validation
-        .map(name => ({ name, proficiency: "Intermediate" as const }));
+        .map(name => ({ 
+          name, 
+          proficiency: "Intermediate" as const 
+        }));
       
       if (languagesArray.length > 0) {
         form.setValue('languages', [...watchLanguages, ...languagesArray]);
@@ -171,7 +174,9 @@ const LanguagesForm: React.FC<LanguagesFormProps> = ({
                       <div className="flex items-center">
                         <Select
                           value={language.proficiency}
-                          onValueChange={(value) => handleUpdateLanguageProficiency(index, value as any)}
+                          onValueChange={(value: "Native" | "Fluent" | "Advanced" | "Intermediate" | "Basic") => 
+                            handleUpdateLanguageProficiency(index, value)
+                          }
                         >
                           <SelectTrigger className="w-36">
                             <SelectValue placeholder="Proficiency" />

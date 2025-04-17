@@ -133,11 +133,11 @@ const ResumeBuilder = () => {
         const typedWorkExperiences = savedDraft.workExperiences.map(exp => ({
           description: exp.description || '',
           location: exp.location || '',
-          position: exp.jobTitle || '',
+          jobTitle: exp.jobTitle || '',
           company: exp.company || '',
-          startDate: exp.startDate || '',
-          endDate: exp.endDate || '',
-          current: exp.currentlyWorking || false,
+          startDate: exp.startDate ? new Date(exp.startDate) : undefined,
+          endDate: exp.endDate ? new Date(exp.endDate) : undefined,
+          currentlyWorking: exp.currentlyWorking || false,
         }));
         setWorkExperiences(typedWorkExperiences);
       }
@@ -148,10 +148,10 @@ const ResumeBuilder = () => {
           location: edu.location || '',
           institution: edu.institution || '',
           degree: edu.degree || '',
-          field: edu.fieldOfStudy || '',
-          startDate: edu.startDate || '',
-          endDate: edu.endDate || '',
-          current: edu.currentlyStudying || false,
+          fieldOfStudy: edu.fieldOfStudy || '',
+          startDate: edu.startDate ? new Date(edu.startDate) : undefined,
+          endDate: edu.endDate ? new Date(edu.endDate) : undefined,
+          currentlyStudying: edu.currentlyStudying || false,
           gpa: edu.gpa || '',
         }));
         setEducations(typedEducation);
@@ -168,10 +168,13 @@ const ResumeBuilder = () => {
       }
       
       if (savedDraft.languages) {
-        setLanguagesList(savedDraft.languages.map(lang => ({
-          name: lang.name,
-          proficiency: lang.proficiency
-        })));
+        const typedLanguages = savedDraft.languages.map(lang => ({
+          languages: [{
+            name: lang.name,
+            proficiency: lang.proficiency
+          }]
+        }));
+        setLanguagesList(typedLanguages);
       }
       
       toast({
@@ -440,21 +443,21 @@ const ResumeBuilder = () => {
       workExperiences: workExperiences.map(exp => ({
         description: exp.description || '',
         location: exp.location || '',
-        jobTitle: exp.position || '',
+        jobTitle: exp.jobTitle || '',
         company: exp.company || '',
-        startDate: typeof exp.startDate === 'string' ? exp.startDate : (exp.startDate?.toISOString().split('T')[0] || ''),
-        endDate: typeof exp.endDate === 'string' ? exp.endDate : (exp.endDate?.toISOString().split('T')[0] || ''),
-        currentlyWorking: exp.current || false,
+        startDate: exp.startDate ? exp.startDate.toISOString().split('T')[0] : '',
+        endDate: exp.endDate ? exp.endDate.toISOString().split('T')[0] : '',
+        currentlyWorking: exp.currentlyWorking || false,
       })),
       education: educations.map(edu => ({
         description: edu.description || '',
         location: edu.location || '',
         institution: edu.institution || '',
         degree: edu.degree || '',
-        fieldOfStudy: edu.field || '',
-        startDate: typeof edu.startDate === 'string' ? edu.startDate : (edu.startDate?.toISOString().split('T')[0] || ''),
-        endDate: typeof edu.endDate === 'string' ? edu.endDate : (edu.endDate?.toISOString().split('T')[0] || ''),
-        currentlyStudying: edu.current || false,
+        fieldOfStudy: edu.fieldOfStudy || '',
+        startDate: edu.startDate ? edu.startDate.toISOString().split('T')[0] : '',
+        endDate: edu.endDate ? edu.endDate.toISOString().split('T')[0] : '',
+        currentlyStudying: edu.currentlyStudying || false,
         gpa: edu.gpa || '',
       })),
       skills: skillsGroups.map(group => ({
@@ -464,10 +467,12 @@ const ResumeBuilder = () => {
           level: skill.level as "Beginner" | "Intermediate" | "Advanced" | "Expert",
         })),
       })),
-      languages: languagesList.map(lang => ({
-        name: lang.name || '',
-        proficiency: lang.proficiency as "Basic" | "Fluent" | "Intermediate" | "Advanced" | "Native",
-      })),
+      languages: languagesList.flatMap(langGroup => 
+        langGroup.languages.map(lang => ({
+          name: lang.name || '',
+          proficiency: lang.proficiency as "Basic" | "Fluent" | "Intermediate" | "Advanced" | "Native",
+        }))
+      ),
     };
   };
 
