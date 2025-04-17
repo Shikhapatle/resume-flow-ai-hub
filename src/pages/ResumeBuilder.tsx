@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -83,6 +82,48 @@ const personalInfoSchema = z.object({
 });
 
 type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
+
+type ResumeData = {
+  personalInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+    title: string;
+    summary: string;
+  };
+  workExperiences: {
+    description: string;
+    location: string;
+    jobTitle: string;
+    company: string;
+    startDate: string;
+    endDate: string;
+    currentlyWorking: boolean;
+  }[];
+  education: {
+    description: string;
+    location: string;
+    institution: string;
+    degree: string;
+    fieldOfStudy: string;
+    startDate: string;
+    endDate: string;
+    currentlyStudying: boolean;
+    gpa: string;
+  }[];
+  skills: {
+    category: string;
+    skills: {
+      name: string;
+      level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+    }[];
+  }[];
+  languages: {
+    name: string;
+    proficiency: "Basic" | "Fluent" | "Intermediate" | "Advanced" | "Native";
+  }[];
+};
 
 const ResumeBuilder = () => {
   const { toast } = useToast();
@@ -421,13 +462,47 @@ const ResumeBuilder = () => {
   };
 
   // Assemble resume data for AI analysis and PDF generation
-  const getResumeData = () => {
+  const getResumeData = (): ResumeData => {
     return {
-      personalInfo: form.getValues(),
-      workExperiences,
-      education: educations,
-      skills: skillsGroups,
-      languages: languagesList,
+      personalInfo: {
+        name: form.getValues('name') || '',
+        email: form.getValues('email') || '',
+        phone: form.getValues('phone') || '',
+        location: form.getValues('location') || '',
+        title: form.getValues('title') || '',
+        summary: form.getValues('summary') || '',
+      },
+      workExperiences: workExperiences.map(exp => ({
+        description: exp.description || '',
+        location: exp.location || '',
+        jobTitle: exp.position || '',
+        company: exp.company || '',
+        startDate: exp.startDate || '',
+        endDate: exp.endDate || '',
+        currentlyWorking: exp.current || false,
+      })),
+      education: educations.map(edu => ({
+        description: edu.description || '',
+        location: edu.location || '',
+        institution: edu.institution || '',
+        degree: edu.degree || '',
+        fieldOfStudy: edu.field || '',
+        startDate: edu.startDate || '',
+        endDate: edu.endDate || '',
+        currentlyStudying: edu.current || false,
+        gpa: edu.gpa || '',
+      })),
+      skills: skillsGroups.map(group => ({
+        category: group.category || '',
+        skills: group.skills.map(skill => ({
+          name: skill.name || '',
+          level: skill.level as "Beginner" | "Intermediate" | "Advanced" | "Expert",
+        })),
+      })),
+      languages: languagesList.map(lang => ({
+        name: lang.name || '',
+        proficiency: lang.proficiency as "Basic" | "Fluent" | "Intermediate" | "Advanced" | "Native",
+      })),
     };
   };
 
