@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Card, 
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardFooter
 } from '@/components/ui/card';
 import { 
   Form, 
@@ -20,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
   Dialog,
   DialogContent,
@@ -27,6 +29,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import Navbar from '@/components/Navbar';
 import { 
   FileText, 
@@ -38,7 +45,9 @@ import {
   Sparkles,
   Download,
   Save,
-  Plus
+  Plus,
+  Eye,
+  CheckCircle
 } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -53,7 +62,16 @@ import SkillsItem from '@/components/SkillsItem';
 import LanguagesForm, { LanguageFormValues } from '@/components/LanguagesForm';
 import LanguagesItem from '@/components/LanguagesItem';
 import ResumeScorecard from '@/components/ResumeScorecard';
-import { generateRecommendation } from '@/utils/aiRecommendations';
+import { 
+  generateRecommendation, 
+  generateResumeSummary 
+} from '@/utils/aiRecommendations';
+import { 
+  saveResumeDraft, 
+  loadResumeDraft, 
+  downloadResumePDF, 
+  generateResumePDF 
+} from '@/utils/pdfGenerator';
 
 const personalInfoSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -70,6 +88,11 @@ const ResumeBuilder = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('personal-info');
   const [aiLoading, setAiLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
   
   // Work Experience state
   const [isWorkExpDialogOpen, setIsWorkExpDialogOpen] = useState(false);
@@ -103,6 +126,42 @@ const ResumeBuilder = () => {
     },
   });
 
+  // Load saved draft on component mount
+  useEffect(() => {
+    const savedDraft = loadResumeDraft();
+    if (savedDraft) {
+      // Update personal info form
+      if (savedDraft.personalInfo) {
+        form.reset(savedDraft.personalInfo);
+      }
+      
+      // Update work experiences
+      if (savedDraft.workExperiences) {
+        setWorkExperiences(savedDraft.workExperiences);
+      }
+      
+      // Update education
+      if (savedDraft.education) {
+        setEducations(savedDraft.education);
+      }
+      
+      // Update skills
+      if (savedDraft.skills) {
+        setSkillsGroups(savedDraft.skills);
+      }
+      
+      // Update languages
+      if (savedDraft.languages) {
+        setLanguagesList(savedDraft.languages);
+      }
+      
+      toast({
+        title: "Draft Loaded",
+        description: "Your previously saved resume draft has been loaded.",
+      });
+    }
+  }, []);
+
   const handleAIGenerate = async () => {
     setAiLoading(true);
     
@@ -135,11 +194,61 @@ const ResumeBuilder = () => {
     }
   };
 
+  const handleGenerateFullSummary = async () => {
+    setIsGeneratingSummary(true);
+    setSummaryLoading(true);
+    
+    try {
+      const resumeData = getResumeData();
+      
+      const summary = await generateResumeSummary(resumeData);
+      
+      form.setValue('summary', summary);
+      
+      toast({
+        title: "Executive Summary Generated",
+        description: "AI has analyzed your entire resume and created a comprehensive executive summary.",
+      });
+    } catch (error) {
+      console.error("Error generating executive summary:", error);
+      toast({
+        title: "Generation Failed",
+        description: "Unable to generate executive summary. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setSummaryLoading(false);
+      setIsGeneratingSummary(false);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    const resumeData = getResumeData();
+    saveResumeDraft(resumeData);
+    setLastSaved(new Date().toLocaleTimeString());
+  };
+
+  const handleDownloadPDF = async () => {
+    const resumeData = getResumeData();
+    await downloadResumePDF(resumeData);
+  };
+
+  const handlePreviewPDF = async () => {
+    const resumeData = getResumeData();
+    const pdfUrl = await generateResumePDF(resumeData);
+    
+    if (pdfUrl) {
+      setPdfPreviewUrl(pdfUrl);
+      setIsPdfPreviewOpen(true);
+    }
+  };
+
   const onSubmit = (data: PersonalInfoValues) => {
     toast({
       title: "Information Saved",
       description: "Your personal information has been saved successfully.",
     });
+    handleSaveDraft();
     setActiveTab('experience');
   };
 
@@ -311,7 +420,7 @@ const ResumeBuilder = () => {
     setEditingLanguagesIndex(null);
   };
 
-  // Assemble resume data for AI analysis
+  // Assemble resume data for AI analysis and PDF generation
   const getResumeData = () => {
     return {
       personalInfo: form.getValues(),
@@ -332,15 +441,40 @@ const ResumeBuilder = () => {
             <h1 className="text-3xl font-bold">Resume Builder</h1>
             <p className="text-muted-foreground mt-1">Create your professional resume with AI assistance</p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" className="gap-2" onClick={handleSaveDraft}>
               <Save className="h-4 w-4" />
               Save Draft
             </Button>
-            <Button variant="outline" className="gap-2">
-              <Download className="h-4 w-4" />
-              Download PDF
-            </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Resume PDF Options</h4>
+                  <div className="grid gap-2">
+                    <Button onClick={handlePreviewPDF} variant="outline" className="gap-2 w-full">
+                      <Eye className="h-4 w-4" /> Preview PDF
+                    </Button>
+                    <Button onClick={handleDownloadPDF} className="gap-2 w-full">
+                      <Download className="h-4 w-4" /> Download PDF
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            {lastSaved && (
+              <div className="flex items-center text-sm text-muted-foreground ml-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+                <span>Last saved: {lastSaved}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -420,13 +554,30 @@ const ResumeBuilder = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-4">Our AI assistant can help you write professional content for your resume sections based on your input.</p>
-                <Button 
-                  onClick={handleAIGenerate} 
-                  className="w-full"
-                  disabled={aiLoading}
-                >
-                  {aiLoading ? "Generating..." : "Generate Professional Summary"}
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={handleAIGenerate} 
+                    className="w-full"
+                    disabled={aiLoading}
+                  >
+                    {aiLoading ? "Generating..." : "Generate Summary"}
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleGenerateFullSummary} 
+                    variant="outline"
+                    className="w-full"
+                    disabled={summaryLoading || workExperiences.length === 0}
+                  >
+                    {summaryLoading ? "Analyzing resume..." : "Generate Executive Summary"}
+                  </Button>
+                  
+                  {workExperiences.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Add work experience to enable executive summary generation
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -522,17 +673,25 @@ const ResumeBuilder = () => {
                           <FormItem>
                             <div className="flex items-center justify-between">
                               <FormLabel>Professional Summary</FormLabel>
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-primary text-xs gap-1"
-                                onClick={handleAIGenerate}
-                                disabled={aiLoading}
-                              >
-                                <Sparkles className="h-3 w-3" />
-                                {aiLoading ? "Generating..." : "Generate with AI"}
-                              </Button>
+                              <div className="flex gap-2">
+                                {isGeneratingSummary ? (
+                                  <Badge variant="success" className="text-xs gap-1">
+                                    <Sparkles className="h-3 w-3" />
+                                    AI Analyzing Resume...
+                                  </Badge>
+                                ) : null}
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-primary text-xs gap-1"
+                                  onClick={handleAIGenerate}
+                                  disabled={aiLoading}
+                                >
+                                  <Sparkles className="h-3 w-3" />
+                                  {aiLoading ? "Generating..." : "Generate with AI"}
+                                </Button>
+                              </div>
                             </div>
                             <FormControl>
                               <Textarea 
@@ -599,6 +758,12 @@ const ResumeBuilder = () => {
                     </div>
                   )}
                 </CardContent>
+                <CardFooter className="flex justify-end pt-0">
+                  <Button onClick={handleSaveDraft} variant="outline" className="gap-2">
+                    <Save className="h-4 w-4" />
+                    Save Progress
+                  </Button>
+                </CardFooter>
               </Card>
             )}
 
@@ -644,6 +809,12 @@ const ResumeBuilder = () => {
                     </div>
                   )}
                 </CardContent>
+                <CardFooter className="flex justify-end pt-0">
+                  <Button onClick={handleSaveDraft} variant="outline" className="gap-2">
+                    <Save className="h-4 w-4" />
+                    Save Progress
+                  </Button>
+                </CardFooter>
               </Card>
             )}
 
@@ -689,6 +860,12 @@ const ResumeBuilder = () => {
                     </div>
                   )}
                 </CardContent>
+                <CardFooter className="flex justify-end pt-0">
+                  <Button onClick={handleSaveDraft} variant="outline" className="gap-2">
+                    <Save className="h-4 w-4" />
+                    Save Progress
+                  </Button>
+                </CardFooter>
               </Card>
             )}
 
@@ -734,6 +911,12 @@ const ResumeBuilder = () => {
                     </div>
                   )}
                 </CardContent>
+                <CardFooter className="flex justify-end pt-0">
+                  <Button onClick={handleSaveDraft} variant="outline" className="gap-2">
+                    <Save className="h-4 w-4" />
+                    Save Progress
+                  </Button>
+                </CardFooter>
               </Card>
             )}
           </div>
@@ -809,6 +992,33 @@ const ResumeBuilder = () => {
             defaultValues={editingLanguagesIndex !== null ? languagesList[editingLanguagesIndex] : undefined}
             isEdit={editingLanguagesIndex !== null}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Preview Dialog */}
+      <Dialog open={isPdfPreviewOpen} onOpenChange={setIsPdfPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Resume PDF Preview</DialogTitle>
+          </DialogHeader>
+          {pdfPreviewUrl && (
+            <div className="w-full h-[80vh]">
+              <iframe 
+                src={pdfPreviewUrl} 
+                className="w-full h-full" 
+                title="Resume PDF preview"
+              />
+            </div>
+          )}
+          <div className="p-4 bg-background border-t flex justify-between">
+            <Button variant="outline" onClick={() => setIsPdfPreviewOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={handleDownloadPDF} className="gap-2">
+              <Download className="h-4 w-4" />
+              Download PDF
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

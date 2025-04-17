@@ -50,6 +50,50 @@ export const generateRecommendation = async ({
   }
 };
 
+export const generateResumeSummary = async (resumeData: any): Promise<string> => {
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama3-70b-8192",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional resume specialist. Generate a concise, professional executive summary based on the provided resume information."
+          },
+          {
+            role: "user",
+            content: `Please create a professional executive summary based on this resume data: ${JSON.stringify(resumeData)}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 300
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Groq API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 
+      "Experienced professional with a proven track record of success in the industry. Skilled in technical implementation and team leadership, with strong communication and problem-solving abilities. Committed to delivering high-quality results and continuous improvement.";
+    
+  } catch (error) {
+    console.error("Resume summary generation error:", error);
+    toast({
+      title: "Summary Generation Failed",
+      description: "Unable to generate resume summary. Please try again later.",
+      variant: "destructive"
+    });
+    return "Experienced professional with a proven track record of success in the industry. Skilled in technical implementation and team leadership, with strong communication and problem-solving abilities. Committed to delivering high-quality results and continuous improvement.";
+  }
+};
+
 export const scoreResume = async (resumeData: any): Promise<{
   score: number;
   feedback: string;
