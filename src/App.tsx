@@ -23,12 +23,24 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/resume-builder" element={<ResumeBuilder />} />
-          <Route path="/job-finder" element={<JobFinder />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/resume-builder" element={
+            <ProtectedRoute requiredRole="user">
+              <ResumeBuilder />
+            </ProtectedRoute>
+          } />
+          <Route path="/job-finder" element={
+            <ProtectedRoute requiredRole="user">
+              <JobFinder />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute requiredRole="user">
+              <Dashboard />
+            </ProtectedRoute>
+          } />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="admin">
               <Admin />
             </ProtectedRoute>
           } />

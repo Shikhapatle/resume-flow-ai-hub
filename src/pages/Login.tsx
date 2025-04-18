@@ -35,12 +35,17 @@ const Login = () => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // Simple mock authentication - in a real app, this would connect to a backend
+    // Mock authentication - in a real app, this would connect to a backend
     if (values.email === "admin@resumeflow.com" && values.password === "admin123") {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", "admin");
       toast.success("Login successful");
       navigate("/admin");
+    } else if (values.email === "user@resumeflow.com" && values.password === "user123") {
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userRole", "user");
+      toast.success("Login successful");
+      navigate("/dashboard");
     } else {
       toast.error("Invalid credentials");
     }
@@ -52,9 +57,9 @@ const Login = () => {
       <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-lg">
           <div className="text-center">
-            <h1 className="text-2xl font-bold">Admin Login</h1>
+            <h1 className="text-2xl font-bold">Sign In</h1>
             <p className="text-sm text-muted-foreground mt-2">
-              Enter your credentials to access the admin panel
+              Sign in to access all features
             </p>
           </div>
           
@@ -95,7 +100,8 @@ const Login = () => {
           </Form>
           
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            <p>For demo: Use email "admin@resumeflow.com" and password "admin123"</p>
+            <p>For demo: Use email "user@resumeflow.com" and password "user123"</p>
+            <p>For admin: Use email "admin@resumeflow.com" and password "admin123"</p>
           </div>
         </div>
       </div>
