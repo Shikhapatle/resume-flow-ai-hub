@@ -19,11 +19,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const userRole = localStorage.getItem("userRole");
     
     if (!isAuthenticated) {
-      toast.error("You must be logged in to view this page");
+      toast.error("Please log in to access this page");
       navigate("/login");
-    } else if (requiredRole && userRole !== requiredRole) {
+      return;
+    }
+    
+    if (requiredRole && userRole !== requiredRole) {
       toast.error(`You need ${requiredRole} access to view this page`);
       navigate("/");
+      return;
     }
   }, [navigate, requiredRole]);
   

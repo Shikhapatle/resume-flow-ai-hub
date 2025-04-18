@@ -24,17 +24,17 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/resume-builder" element={
-            <ProtectedRoute requiredRole="user">
+            <ProtectedRoute>
               <ResumeBuilder />
             </ProtectedRoute>
           } />
           <Route path="/job-finder" element={
-            <ProtectedRoute requiredRole="user">
+            <ProtectedRoute>
               <JobFinder />
             </ProtectedRoute>
           } />
           <Route path="/dashboard" element={
-            <ProtectedRoute requiredRole="user">
+            <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           } />
