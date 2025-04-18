@@ -1,14 +1,14 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import Navbar from '@/components/Navbar';
-import { FileText, Briefcase, CheckCircle, Clock, XCircle, PieChart, BarChart, LineChart, ArrowUpRight } from 'lucide-react';
+import { FileText, Briefcase, CheckCircle, Clock, XCircle, PieChart, BarChart, LineChart, ArrowUpRight, BookOpen, Lightbulb, Target } from 'lucide-react';
+import { generateRecommendation } from '@/utils/aiRecommendations';
 
-// Sample application data
 const applications = [
   { 
     id: 1, 
@@ -45,17 +45,143 @@ const applications = [
 ];
 
 const Dashboard = () => {
-  // Stats calculation
+  const [personalSummary, setPersonalSummary] = useState<string>("");
+  const [workSummary, setWorkSummary] = useState<string>("");
+  const [educationSummary, setEducationSummary] = useState<string>("");
+  const [skillsSummary, setSkillsSummary] = useState<string>("");
+
   const totalApplications = applications.length;
   const interviews = applications.filter(app => app.status === "Interview").length;
   const offers = applications.filter(app => app.status === "Offer").length;
   const rejections = applications.filter(app => app.status === "Rejected").length;
-  
+
+  useEffect(() => {
+    const generateSummaries = async () => {
+      try {
+        const personalQuery = "summary of a software professional's personal profile";
+        const workQuery = "summary of relevant work experience in tech";
+        const educationQuery = "summary of educational background";
+        const skillsQuery = "summary of technical and soft skills";
+
+        const [personal, work, education, skills] = await Promise.all([
+          generateRecommendation({ query: personalQuery }),
+          generateRecommendation({ query: workQuery }),
+          generateRecommendation({ query: educationQuery }),
+          generateRecommendation({ query: skillsQuery })
+        ]);
+
+        setPersonalSummary(personal);
+        setWorkSummary(work);
+        setEducationSummary(education);
+        setSkillsSummary(skills);
+      } catch (error) {
+        console.error('Error generating summaries:', error);
+      }
+    };
+
+    generateSummaries();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
       <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        <Card className="mb-8 border-2 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-2xl">Welcome to ResumeFlow</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-start space-x-3">
+                <div className="rounded-full p-2 bg-primary/10">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">AI-Powered Resume Builder</h3>
+                  <p className="text-sm text-muted-foreground">Create professional resumes with AI assistance. Get real-time suggestions and improvements.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="rounded-full p-2 bg-primary/10">
+                  <Briefcase className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Smart Job Matching</h3>
+                  <p className="text-sm text-muted-foreground">Find jobs that match your skills and experience. Get personalized job recommendations.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="rounded-full p-2 bg-primary/10">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Application Tracking</h3>
+                  <p className="text-sm text-muted-foreground">Track your job applications and get insights on your progress. Never miss a follow-up.</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              AI-Generated Profile Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Personal Profile</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[100px]">
+                    <p className="text-sm text-muted-foreground">{personalSummary}</p>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Work Experience</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[100px]">
+                    <p className="text-sm text-muted-foreground">{workSummary}</p>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Education</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[100px]">
+                    <p className="text-sm text-muted-foreground">{educationSummary}</p>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Skills Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[100px]">
+                    <p className="text-sm text-muted-foreground">{skillsSummary}</p>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">Application Dashboard</h1>
