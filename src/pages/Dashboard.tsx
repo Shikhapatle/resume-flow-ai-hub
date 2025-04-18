@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Briefcase } from 'lucide-react';
@@ -10,6 +9,7 @@ import ApplicationList from '@/components/dashboard/ApplicationList';
 import ApplicationTimeline from '@/components/dashboard/ApplicationTimeline';
 import ApplicationProgress from '@/components/dashboard/ApplicationProgress';
 import ApplicationTips from '@/components/dashboard/ApplicationTips';
+import ResumeViewer from '@/components/dashboard/ResumeViewer';
 
 const applications = [
   { 
@@ -59,6 +59,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         <Welcome />
         <ProfileSummary />
+        <ResumeViewer />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>

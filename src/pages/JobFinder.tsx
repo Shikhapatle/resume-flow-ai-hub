@@ -1,14 +1,15 @@
-
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import JobFilters from '@/components/job-finder/JobFilters';
+import Navbar from '@/components/Navbar';
+import { Briefcase } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Search, 
-  Briefcase, 
+  Briefcase as BriefcaseIcon, 
   MapPin, 
   Clock, 
   Building, 
@@ -17,7 +18,6 @@ import {
   Sparkles,
   Filter
 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,19 +93,40 @@ const JobFinder = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [jobs, setJobs] = useState(sampleJobs);
   const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({
+    experienceLevel: '',
+    employmentType: '',
+    locationType: '',
+    salary: 50
+  });
 
-  const handleSearch = () => {
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
     setLoading(true);
-    // Simulate API call
+    
+    // Simulate API call with filters
     setTimeout(() => {
-      const filtered = sampleJobs.filter(job => 
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      const filtered = sampleJobs.filter(job => {
+        const matchesSearch = job.title.toLowerCase().includes(term.toLowerCase()) ||
+          job.company.toLowerCase().includes(term.toLowerCase()) ||
+          job.skills.some(skill => skill.toLowerCase().includes(term.toLowerCase()));
+          
+        const matchesExperience = !filters.experienceLevel || job.title.toLowerCase().includes(filters.experienceLevel);
+        const matchesType = !filters.employmentType || job.location.toLowerCase().includes(filters.employmentType);
+        const matchesLocation = !filters.locationType || job.location.toLowerCase().includes(filters.locationType);
+        const matchesSalary = parseInt(job.salary.replace(/[^0-9]/g, '')) >= filters.salary * 1000;
+        
+        return matchesSearch && matchesExperience && matchesType && matchesLocation && matchesSalary;
+      });
+      
       setJobs(filtered);
       setLoading(false);
     }, 1000);
+  };
+
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    handleSearch(searchTerm);
   };
 
   const handleSaveJob = (jobId: number) => {
@@ -145,79 +166,17 @@ const JobFinder = () => {
             <h1 className="text-3xl font-bold">Job Finder</h1>
             <p className="text-muted-foreground mt-1">Find your perfect job match powered by AI</p>
           </div>
-          <Button onClick={handleMatchJobs} className="gap-2" disabled={loading}>
-            <Sparkles className="h-4 w-4" />
-            Match with My Resume
-          </Button>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Search Jobs</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Input 
-                    placeholder="Job title, skills, or company" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                  <Button size="icon" onClick={handleSearch} disabled={loading}>
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between">
-                        <span className="flex items-center gap-2">
-                          <Filter className="h-4 w-4" /> 
-                          Filters
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56">
-                      <DropdownMenuLabel>Job Type</DropdownMenuLabel>
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem>Full-time</DropdownMenuItem>
-                        <DropdownMenuItem>Part-time</DropdownMenuItem>
-                        <DropdownMenuItem>Contract</DropdownMenuItem>
-                        <DropdownMenuItem>Freelance</DropdownMenuItem>
-                      </DropdownMenuGroup>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Experience Level</DropdownMenuLabel>
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem>Entry Level</DropdownMenuItem>
-                        <DropdownMenuItem>Mid Level</DropdownMenuItem>
-                        <DropdownMenuItem>Senior Level</DropdownMenuItem>
-                        <DropdownMenuItem>Executive</DropdownMenuItem>
-                      </DropdownMenuGroup>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Location</DropdownMenuLabel>
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem>Remote</DropdownMenuItem>
-                        <DropdownMenuItem>Hybrid</DropdownMenuItem>
-                        <DropdownMenuItem>On-site</DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Popular Searches</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="cursor-pointer hover:bg-muted" onClick={() => setSearchTerm('React')}>React</Badge>
-                    <Badge variant="outline" className="cursor-pointer hover:bg-muted" onClick={() => setSearchTerm('JavaScript')}>JavaScript</Badge>
-                    <Badge variant="outline" className="cursor-pointer hover:bg-muted" onClick={() => setSearchTerm('Remote')}>Remote</Badge>
-                    <Badge variant="outline" className="cursor-pointer hover:bg-muted" onClick={() => setSearchTerm('Frontend')}>Frontend</Badge>
-                    <Badge variant="outline" className="cursor-pointer hover:bg-muted" onClick={() => setSearchTerm('Backend')}>Backend</Badge>
-                  </div>
-                </div>
-              </CardContent>
+            <Card className="p-4">
+              <JobFilters 
+                onFilterChange={handleFilterChange}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
+                loading={loading}
+              />
             </Card>
           </div>
           
